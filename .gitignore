@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# turbo / build caches
+.next/
+dist/
+build/
+**/.turbo/
+**/.vite/
+.vite/
+coverage/
+.playwright-report/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor
+.vscode/
+.idea/
+.DS_Store
+
+# env
+.env
+.env.local
+apps/**/.env
+
+# android/ios
+apps/pos/android/app/build/
+apps/pos/android/.gradle/
+apps/pos/android/.cxx/
