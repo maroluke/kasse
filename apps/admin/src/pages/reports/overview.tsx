@@ -53,24 +53,24 @@ export default function ReportsOverview() {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-semibold">Reports Overview</h1>
+      <h1 className="text-xl font-semibold">Berichte Übersicht</h1>
       <div className="flex items-center gap-2 my-3">
-        <span>From</span>
+        <span>Von</span>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-[180px]" />
-        <span>To</span>
+        <span>Bis</span>
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-[180px]" />
-        <Button size="sm" onClick={load} disabled={loading}>Reload</Button>
+        <Button size="sm" onClick={load} disabled={loading}>Neu laden</Button>
       </div>
       {error && <div className="text-red-600">{error}</div>}
       <div className={`grid gap-4 ${loading ? 'opacity-60' : ''}`}>
         <section>
-          <h2 className="font-semibold">Daily (excl. deposits)</h2>
+          <h2 className="font-semibold">Täglich (ohne Pfand)</h2>
           <div className="grid gap-2 font-semibold mb-2 [grid-template-columns:140px_120px_140px_140px_100px]">
-            <div>Day</div>
-            <div>Sales</div>
-            <div>Deposit Taken</div>
-            <div>Deposit Refund</div>
-            <div>Orders</div>
+            <div>Tag</div>
+            <div>Verkäufe</div>
+            <div>Pfand genommen</div>
+            <div>Pfand zurück</div>
+            <div>Bestellungen</div>
           </div>
           {daily.map((r) => (
             <div key={String(r.day)} className="grid items-center gap-2 mb-1 [grid-template-columns:140px_120px_140px_140px_100px]">
@@ -81,15 +81,15 @@ export default function ReportsOverview() {
               <div>{r.orders}</div>
             </div>
           ))}
-          {daily.length === 0 && <div>No data</div>}
+          {daily.length === 0 && <div>Keine Daten</div>}
         </section>
 
         <section>
-          <h2 className="font-semibold">Today Hourly</h2>
+          <h2 className="font-semibold">Heute Stündlich</h2>
           <div className="grid gap-2 font-semibold mb-2 [grid-template-columns:180px_120px_100px]">
-            <div>Hour</div>
-            <div>Sales</div>
-            <div>Orders</div>
+            <div>Stunde</div>
+            <div>Verkäufe</div>
+            <div>Bestellungen</div>
           </div>
           {hourly.map((r) => (
             <div key={String(r.hour)} className="grid items-center gap-2 mb-1 [grid-template-columns:180px_120px_100px]">
@@ -98,7 +98,7 @@ export default function ReportsOverview() {
               <div>{r.orders}</div>
             </div>
           ))}
-          {hourly.length === 0 && <div>No data</div>}
+          {hourly.length === 0 && <div>Keine Daten</div>}
         </section>
       </div>
     </div>

@@ -3,6 +3,7 @@ export type PosSettings = {
   device_key: string | null;
   staff_pin: string | null;
   outlet_id: string | null;
+  printer_ip?: string | null;
 };
 
 const KEY = 'pos_settings_v1';
@@ -10,16 +11,17 @@ const KEY = 'pos_settings_v1';
 export function getSettings(): PosSettings {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { tenant_id: null, device_key: null, staff_pin: null, outlet_id: null };
+    if (!raw) return { tenant_id: null, device_key: null, staff_pin: null, outlet_id: null, printer_ip: null };
     const v = JSON.parse(raw);
     return {
       tenant_id: v.tenant_id ?? null,
       device_key: v.device_key ?? null,
       staff_pin: v.staff_pin ?? null,
       outlet_id: v.outlet_id ?? null,
+      printer_ip: v.printer_ip ?? null,
     };
   } catch {
-    return { tenant_id: null, device_key: null, staff_pin: null, outlet_id: null };
+    return { tenant_id: null, device_key: null, staff_pin: null, outlet_id: null, printer_ip: null };
   }
 }
 

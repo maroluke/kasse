@@ -1,7 +1,8 @@
 import React from 'react';
 import { useStore } from '../store';
 import { calcTotals, renderReceipt } from '@kasse/core';
-import { PaymentPlugin, PrinterPlugin } from '../stubs/native';
+import { PaymentPlugin } from '../stubs/native';
+import { PrinterPlugin } from '../printer/PrinterPlugin';
 import { saveOrder } from '../db/repo';
 import { syncOrderCreated } from '../sync';
 import { getOutletId, getTenantId } from '../settings';
@@ -57,70 +58,117 @@ export function Sale() {
   }
 
   return (
-    <div className="p-4 grid grid-cols-3 gap-4">
-      <div className="col-span-2">
-        <h1 className="text-xl font-bold mb-2">Products</h1>
-        {!outletId && (
-          <div className="mb-3 p-2 rounded bg-amber-100 text-amber-900 text-sm">
-            Tipp: Kein Outlet ausgewählt. Binde das Gerät in Settings an ein Outlet, um outlet-spezifische Preise zu laden.
-          </div>
-        )}
-        {categories.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2 items-center">
+    <div className="flex flex-col h-screen p-3 gap-3">
+      {/* Header */}
+      <div className="flex-shrink-0">
+        <h1 className="text-xl font-bold">Kasse</h1>
+      </div>
+
+      {/* Categories */}
+      {categories.length > 0 && (
+        <div className="flex-shrink-0">
+          <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
             <button
-              className={`px-3 py-1 rounded border ${!selectedCat ? 'bg-gray-900 text-white' : 'bg-white'}`}
+              className={`category-pill flex-shrink-0 ${!selectedCat ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}
               onClick={() => setSelectedCat(null)}
             >Alle</button>
             {categories.map((c) => (
               <button
                 key={c.id}
-                className={`px-3 py-1 rounded border ${selectedCat === c.id ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                className={`category-pill flex-shrink-0 ${selectedCat === c.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}
                 onClick={() => setSelectedCat(c.id)}
               >{c.name}</button>
             ))}
           </div>
-        )}
-        <div className="grid grid-cols-3 gap-2">
-          {filteredProducts.map((p) => (
-            <button key={p.id} className="bg-blue-600 text-white p-3 rounded" onClick={() => addProductToCart(p)}>
-              {p.name} {(p.price_cents / 100).toFixed(2)}
-            </button>
-          ))}
         </div>
-        <div className="mt-4 flex gap-2">
-          <button className="bg-amber-600 text-white p-3 rounded" onClick={addDeposit}>Add Deposit +5.00</button>
-          <button className="bg-amber-700 text-white p-3 rounded" onClick={returnDeposit}>Return Deposit -5.00</button>
+      )}
+
+      {/* Warning */}
+      {!outletId && (
+        <div className="flex-shrink-0 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          ⚠️ Kein Outlet ausgewählt
         </div>
-      </div>
-      <div>
-        <h2 className="text-lg font-semibold mb-2">Cart</h2>
-        <div className="bg-gray-100 p-2 h-64 overflow-y-auto">
-          {cart.map((l, idx) => (
-            <div key={idx} className="flex justify-between border-b py-1 text-sm">
-              <span>{l.name}</span>
-              <span>{((l.kind === 'SALE' ? l.price_cents : l.deposit_cents) / 100).toFixed(2)}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 text-sm">
-          <label className="block mb-1">Pager-Nummer {hasKitchenItems() ? <span className="text-red-600">(erforderlich)</span> : null}</label>
-          <div className="flex gap-2">
-            <input className="border rounded px-2 py-1 flex-1" inputMode="numeric" value={pagerNumber || ''} onChange={(e) => setPagerNumber(e.target.value)} placeholder="z.B. 21" />
-            <button className="px-3 py-1 border rounded" onClick={() => alert('NFC-Scan folgt – späteres Update')}>Per NFC</button>
+      )}
+
+      {/* Products Grid - takes remaining space */}
+      <div className="flex-1 min-h-0">
+        <div className="h-full overflow-y-auto hide-scrollbar">
+          <div className="product-grid-mobile pb-3">
+            {filteredProducts.map((p) => (
+              <button 
+                key={p.id} 
+                className="touch-button bg-primary text-primary-foreground rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center text-center p-4 min-h-[80px]" 
+                onClick={() => addProductToCart(p)}
+              >
+                <div className="font-medium text-sm leading-tight">{p.name}</div>
+                <div className="text-xs opacity-90 mt-1">€{(p.price_cents / 100).toFixed(2)}</div>
+              </button>
+            ))}
           </div>
         </div>
-        <div className="mt-2 text-sm">
-          <div>Sales: {(totals.sale_total_cents / 100).toFixed(2)}</div>
-          <div>Deposits: {(totals.deposit_total_cents / 100).toFixed(2)}</div>
-          <div>VAT: {(totals.vat_total_cents / 100).toFixed(2)}</div>
-          <div className="font-bold">Total: {(totals.grand_total_cents / 100).toFixed(2)}</div>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button className="bg-green-600 text-white p-3 rounded" onClick={pay}>Pay</button>
-          <button className="bg-gray-600 text-white p-3 rounded" onClick={async () => {
-            const receipt = renderReceipt(cart);
-            await PrinterPlugin.print(receipt);
-          }}>Print</button>
+      </div>
+
+      {/* Bottom Section - Cart */}
+      <div className="flex-shrink-0 border-t pt-3">
+        <div className="flex gap-3">
+          {/* Cart Items */}
+          <div className="flex-1 min-w-0">
+            <div className="bg-muted rounded-lg p-3 h-32 overflow-y-auto hide-scrollbar mb-2">
+              {cart.length === 0 ? (
+                <div className="text-muted-foreground text-center text-sm">Warenkorb leer</div>
+              ) : (
+                <div className="space-y-1">
+                  {cart.map((l, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-sm">
+                      <span className="truncate flex-1 mr-2">{l.name}</span>
+                      <span className="font-mono text-xs">€{((l.kind === 'SALE' ? l.price_cents : l.deposit_cents) / 100).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Pager Input */}
+            <div className="mb-2">
+              <input 
+                className="w-full border rounded-lg px-3 py-2 text-sm" 
+                inputMode="numeric" 
+                value={pagerNumber || ''} 
+                onChange={(e) => setPagerNumber(e.target.value)} 
+                placeholder="Pager-Nummer" 
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 w-32">
+            <div className="text-center">
+              <div className="font-bold text-lg">€{(totals.grand_total_cents / 100).toFixed(2)}</div>
+            </div>
+            <button 
+              className="touch-button bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex-1" 
+              onClick={pay}
+              disabled={cart.length === 0}
+            >
+              Bezahlen
+            </button>
+            <button 
+              className="touch-button bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm" 
+              onClick={addDeposit}
+            >
+              +Pfand
+            </button>
+            <button 
+              className="touch-button bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-sm" 
+              onClick={async () => {
+                const receipt = renderReceipt(cart);
+                await PrinterPlugin.print(receipt);
+              }}
+              disabled={cart.length === 0}
+            >
+              Drucken
+            </button>
+          </div>
         </div>
       </div>
     </div>

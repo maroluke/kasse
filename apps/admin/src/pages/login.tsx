@@ -21,23 +21,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center p-4">
       <form onSubmit={onSubmit} className="w-[360px] grid gap-3 p-6 border rounded-lg bg-card text-card-foreground">
-        <h1 className="text-xl font-semibold">Login</h1>
+        <h1 className="text-xl font-semibold">Anmeldung</h1>
         <Input
-          placeholder="Email"
+          placeholder="E-Mail"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
         <Input
-          placeholder="Password"
+          placeholder="Passwort"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
         {error && <div className="text-red-600">{error}</div>}
-        <Button type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign In'}</Button>
+        <Button type="submit" disabled={loading}>{loading ? 'Melde an…' : 'Anmelden'}</Button>
       </form>
     </div>
   );

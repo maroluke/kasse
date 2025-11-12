@@ -96,14 +96,14 @@ export default function Products() {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-semibold">Products</h1>
+      <h1 className="text-xl font-semibold">Produkte</h1>
       <div className="mt-3 flex items-center gap-2">
         <div className="text-xs opacity-70">Tenant: {tenantId || '—'}</div>
-        <Button variant="secondary" size="sm" onClick={() => signOut()}>Logout</Button>
+        <Button variant="secondary" size="sm" onClick={() => signOut()}>Abmelden</Button>
       </div>
 
       <div className="grid gap-2 max-w-[1100px] mb-4 mt-4">
-        <div className="font-semibold">New product</div>
+        <div className="font-semibold">Neues Produkt</div>
         <div className="grid gap-2 [grid-template-columns:1fr_180px_120px_120px_100px_120px_100px_100px]">
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" />
           <Select value={form.category_id ?? ''} onChange={(e) => setForm({ ...form, category_id: e.target.value || null })}>
@@ -112,18 +112,18 @@ export default function Products() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </Select>
-          <Input type="number" value={form.price_cents} onChange={(e) => setForm({ ...form, price_cents: Number(e.target.value) })} placeholder="Price (cents)" />
-          <Input type="number" value={form.deposit_cents} onChange={(e) => setForm({ ...form, deposit_cents: Number(e.target.value) })} placeholder="Deposit (cents)" />
-          <Input type="number" step={0.1} value={form.vat_rate} onChange={(e) => setForm({ ...form, vat_rate: Number(e.target.value) })} placeholder="VAT %" />
+          <Input type="number" value={form.price_cents} onChange={(e) => setForm({ ...form, price_cents: Number(e.target.value) })} placeholder="Preis (Cent)" />
+          <Input type="number" value={form.deposit_cents} onChange={(e) => setForm({ ...form, deposit_cents: Number(e.target.value) })} placeholder="Pfand (Cent)" />
+          <Input type="number" step={0.1} value={form.vat_rate} onChange={(e) => setForm({ ...form, vat_rate: Number(e.target.value) })} placeholder="MwSt %" />
           <label className="flex items-center gap-1.5">
             <Checkbox checked={form.is_kitchen_item} onChange={(e) => setForm({ ...form, is_kitchen_item: (e.target as HTMLInputElement).checked })} />
-            Kitchen
+            Küche
           </label>
           <label className="flex items-center gap-1.5">
             <Checkbox checked={form.active} onChange={(e) => setForm({ ...form, active: (e.target as HTMLInputElement).checked })} />
-            Active
+            Aktiv
           </label>
-          <Button onClick={createProduct}>Create</Button>
+          <Button onClick={createProduct}>Erstellen</Button>
         </div>
       </div>
 
@@ -132,13 +132,13 @@ export default function Products() {
       <div className={loading || tenantLoading ? 'opacity-60' : ''}>
         <div className="grid gap-2 font-semibold mb-2 [grid-template-columns:1.5fr_180px_120px_120px_100px_100px_80px_140px]">
           <div>Name</div>
-          <div>Category</div>
-          <div>Price</div>
-          <div>Deposit</div>
-          <div>VAT%</div>
-          <div>Kitchen</div>
-          <div>Active</div>
-          <div>Actions</div>
+          <div>Kategorie</div>
+          <div>Preis</div>
+          <div>Pfand</div>
+          <div>MwSt%</div>
+          <div>Küche</div>
+          <div>Aktiv</div>
+          <div>Aktionen</div>
         </div>
         {items.map((p) => (
           <div key={p.id} className="grid items-center gap-2 mb-1 [grid-template-columns:1.5fr_180px_120px_120px_100px_100px_80px_140px]">
@@ -155,12 +155,12 @@ export default function Products() {
             <Checkbox checked={p.is_kitchen_item} onChange={(e) => updateProduct(p.id, { is_kitchen_item: (e.target as HTMLInputElement).checked })} />
             <Checkbox checked={p.active} onChange={(e) => updateProduct(p.id, { active: (e.target as HTMLInputElement).checked })} />
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => deleteProduct(p.id)}>Delete</Button>
-              <Button variant="secondary" size="sm" onClick={load}>Refresh</Button>
+              <Button variant="secondary" size="sm" onClick={() => deleteProduct(p.id)}>Löschen</Button>
+              <Button variant="secondary" size="sm" onClick={load}>Aktualisieren</Button>
             </div>
           </div>
         ))}
-        {items.length === 0 && <div>No products</div>}
+        {items.length === 0 && <div>Keine Produkte</div>}
       </div>
     </div>
   );

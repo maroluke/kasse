@@ -26,8 +26,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     async function fetchTenant() {
       if (!hasSupabaseEnv) { setTenantId(null); return; }
       if (!user) {
-        const fallback = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || (typeof window !== 'undefined' ? localStorage.getItem('tenant_id') || '' : '');
-        setTenantId(fallback || null);
+        const fallback = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || (typeof window !== 'undefined' ? localStorage.getItem('tenant_id') : '');
+        setTenantId(fallback);
         return;
       }
       setLoading(true);
@@ -41,16 +41,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
         let first = (data && data[0]?.tenant_id) || null;
         if (!first) {
-          const fallback = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || (typeof window !== 'undefined' ? localStorage.getItem('tenant_id') || '' : '');
-          first = fallback || null;
+          const fallback = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || (typeof window !== 'undefined' ? localStorage.getItem('tenant_id') : '');
+          first = fallback;
         }
         setTenantId(first);
         if (first && typeof window !== 'undefined') localStorage.setItem('tenant_id', first);
       } catch (e: any) {
         setError(e.message || String(e));
         // On error (e.g., RLS), still try to apply fallback so UI keeps working
-        const fallback = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || (typeof window !== 'undefined' ? localStorage.getItem('tenant_id') || '' : '');
-        setTenantId(fallback || null);
+        const fallback = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || (typeof window !== 'undefined' ? localStorage.getItem('tenant_id') : '');
+        setTenantId(fallback);
       } finally {
         setLoading(false);
       }
@@ -62,7 +62,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const supa = useMemo(() => {
     if (!hasSupabaseEnv) return null;
     if (tenantId) {
-      // Create tenant-scoped client to include x-tenant-id for RLS policies and debug RPCs
+      // Create tenant-scoped client to include x-tenant-id for RLS policies
       return createClient(url!, anon!, {
         auth: { persistSession: true },
         global: { headers: { 'x-tenant-id': tenantId } },

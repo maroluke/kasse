@@ -17,7 +17,7 @@ async function fetchKitchenItems(supa: any): Promise<Item[]> {
     .order('order_id', { ascending: false })
     .limit(50);
   if (error) {
-    console.warn('fetchKitchenItems error', error);
+    // Error fetching kitchen items - returning empty array
     return [];
   }
   return (data || []).map((r: any) => ({

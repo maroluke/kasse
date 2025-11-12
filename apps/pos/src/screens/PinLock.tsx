@@ -17,26 +17,52 @@ export function PinLock() {
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-xs bg-white border rounded-lg shadow p-6">
-        <h1 className="text-xl font-bold mb-4 text-center">PIN erforderlich</h1>
-        <input
-          type="password"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          className="w-full border rounded px-3 py-2 mb-3"
-          placeholder="PIN eingeben"
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') unlock(verifyPin(pin)); }}
-        />
-        {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
-        <button
-          className="w-full bg-gray-800 text-white rounded px-3 py-2"
-          onClick={() => unlock(verifyPin(pin))}
-        >
-          Entsperren
-        </button>
+    <div className="h-full flex flex-col items-center justify-center p-6 bg-background">
+      <div className="w-full max-w-sm bg-card rounded-xl shadow-lg border p-8">
+        <div className="text-center mb-6">
+          <div className="text-3xl mb-3">🔒</div>
+          <h1 className="text-2xl font-bold mb-2">PIN erforderlich</h1>
+          <p className="text-muted-foreground text-sm">Geben Sie Ihre PIN ein, um die Kasse zu entsperren.</p>
+        </div>
+        
+        <div className="space-y-4">
+          <input
+            type="password"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            className="w-full border rounded-lg px-4 py-3 text-center text-lg tracking-widest font-mono focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="••••"
+            value={pin}
+            onChange={(e) => {
+              setPin(e.target.value);
+              setError(null);
+            }}
+            onKeyDown={(e) => { 
+              if (e.key === 'Enter') unlock(verifyPin(pin)); 
+            }}
+            autoFocus
+          />
+          
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
+              <span>⚠️</span>
+              {error}
+            </div>
+          )}
+          
+          <button
+            className="w-full touch-button bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-base"
+            onClick={() => unlock(verifyPin(pin))}
+          >
+            Entsperren
+          </button>
+        </div>
+        
+        <div className="mt-6 pt-6 border-t text-center">
+          <p className="text-xs text-muted-foreground">
+            Konfigurieren Sie Ihre PIN in den Einstellungen
+          </p>
+        </div>
       </div>
     </div>
   );

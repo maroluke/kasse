@@ -19,7 +19,7 @@ function Guard({ children }: { children: React.ReactNode }) {
       if (user && isLogin) router.replace('/');
     }
   }, [user, loading, isLogin, router]);
-  if (loading) return <div className="p-4">Loading…</div>;
+  if (loading) return <div className="p-4">Lädt…</div>;
   if (!user && !isLogin) return null;
   return (
     <>
@@ -27,13 +27,15 @@ function Guard({ children }: { children: React.ReactNode }) {
         <div className="sticky top-0 z-20 bg-foreground text-background">
           <div className="flex items-center gap-2 px-3 py-2">
             <Link href="/" className="font-bold mr-2">Admin</Link>
-            <Button asChild variant="secondary" size="sm"><Link href="/products">Products</Link></Button>
-            <Button asChild variant="secondary" size="sm"><Link href="/outlets">Outlets</Link></Button>
-            <Button asChild variant="secondary" size="sm"><Link href="/categories">Categories</Link></Button>
-            <Button asChild variant="secondary" size="sm"><Link href="/outlet-pricing">Outlet Pricing</Link></Button>
-            <Button asChild variant="secondary" size="sm"><Link href="/settings/vat">VAT</Link></Button>
-            <Button asChild variant="secondary" size="sm"><Link href="/reports/daily">Daily</Link></Button>
-            <Button asChild variant="secondary" size="sm"><Link href="/reports/overview">Overview</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/products">Produkte</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/staff">Mitarbeiter</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/kitchen-stats">Kitchen Statistiken</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/outlets">Filialen</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/categories">Kategorien</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/outlet-pricing">Filialpreise</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/settings/vat">MwSt.</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/reports/daily">Tagesbericht</Link></Button>
+            <Button asChild variant="secondary" size="sm"><Link href="/reports/overview">Übersicht</Link></Button>
           </div>
         </div>
       )}

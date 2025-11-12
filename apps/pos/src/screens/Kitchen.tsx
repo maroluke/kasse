@@ -18,6 +18,8 @@ type Item = {
   in_progress_by?: string | null;
   ready_at?: string | null;
   ready_by?: string | null;
+  in_progress_by_name?: string | null;
+  ready_by_name?: string | null;
 };
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -34,15 +36,45 @@ function nextStatus(s: Prep): Prep {
 
 async function fetchKitchenItems(supa: any): Promise<Item[]> {
   if (!supa) return [];
-  const { data, error } = await supa
+  
+  // First fetch order items with timing data
+  const { data: itemsData, error: itemsError } = await supa
     .from('order_items')
     .select('id, order_id, qty, prep_status, in_progress_at, in_progress_by, ready_at, ready_by, orders!inner(pager_number), products!inner(name, is_kitchen_item)')
     .eq('kind', 'SALE')
     .eq('products.is_kitchen_item', true)
     .order('order_id', { ascending: false })
     .limit(50);
-  if (error) return [];
-  return (data || []).map((r: any) => ({
+    
+  if (itemsError) return [];
+  
+  const items = itemsData || [];
+  
+  // Get all unique staff PINs from the items
+  const staffPins = new Set<string>();
+  items.forEach((item: any) => {
+    if (item.in_progress_by) staffPins.add(item.in_progress_by);
+    if (item.ready_by) staffPins.add(item.ready_by);
+  });
+  
+  // Fetch staff names for those PINs
+  const staffMap = new Map<string, string>();
+  if (staffPins.size > 0) {
+    const { data: staffData } = await supa
+      .from('staff')
+      .select('pin, name')
+      .in('pin', Array.from(staffPins))
+      .eq('active', true);
+      
+    if (staffData) {
+      (staffData as any[]).forEach(staff => {
+        staffMap.set(staff.pin, staff.name);
+      });
+    }
+  }
+  
+  // Map items with staff names
+  return items.map((r: any) => ({
     id: r.id,
     order_id: r.order_id,
     name: r.products?.name ?? 'Item',
@@ -53,6 +85,8 @@ async function fetchKitchenItems(supa: any): Promise<Item[]> {
     in_progress_by: r.in_progress_by ?? null,
     ready_at: r.ready_at ?? null,
     ready_by: r.ready_by ?? null,
+    in_progress_by_name: staffMap.get(r.in_progress_by) || null,
+    ready_by_name: staffMap.get(r.ready_by) || null,
   }));
 }
 
@@ -134,7 +168,10 @@ export function Kitchen() {
     if (status === 'READY') { patch.ready_at = now; patch.ready_by = pin || null; }
     if (!supa) { setItems((arr) => arr.map((x) => x.id === it.id ? { ...x, ...patch } : x)); return; }
     const { error } = await supa.from('order_items').update(patch).eq('id', it.id);
-    if (error) console.warn('update prep_status error', error);
+    if (error) {
+      // Error updating preparation status
+      return;
+    }
   }
 
   const grouped = React.useMemo(() => {
@@ -156,56 +193,122 @@ export function Kitchen() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
-        <div className="px-4 py-3 flex flex-wrap items-center gap-2">
-          <div className="text-2xl font-bold mr-auto">Kitchen</div>
-          {!supa && <div className="text-amber-700 text-sm">Supabase ENV fehlt – Mockdaten & 5s Polling aktiv.</div>}
-          {supa && !connected && <div className="text-sm">Verbinde Realtime…</div>}
-          {(['ALL','QUEUED','IN_PROGRESS','READY'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-4 py-2 rounded text-sm md:text-base ${filter===s?'bg-gray-800 text-white':'bg-gray-200 hover:bg-gray-300'}`}
-            >{s}</button>
-          ))}
-          <label className="ml-2 text-sm flex items-center gap-2">
-            <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
-            Sound bei neuer Bestellung
-          </label>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="text-xl font-bold">Küche</div>
+            <div className="flex items-center gap-2">
+              {!supa && <div className="text-amber-600 text-xs sm:text-sm">Mock-Modus</div>}
+              {supa && !connected && <div className="text-xs sm:text-sm text-muted-foreground">Verbinde…</div>}
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            {(['ALL','QUEUED','IN_PROGRESS','READY'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={`touch-button text-sm ${filter===s?'bg-primary text-primary-foreground':'bg-muted hover:bg-muted/80'}`}
+              >
+                {s === 'ALL' ? 'Alle' : 
+                 s === 'QUEUED' ? 'Wartend' :
+                 s === 'IN_PROGRESS' ? 'In Arbeit' :
+                 s === 'READY' ? 'Fertig' : s}
+              </button>
+            ))}
+            
+            <label className="flex items-center gap-2 text-sm ml-auto">
+              <input 
+                type="checkbox" 
+                checked={sound} 
+                onChange={(e) => setSound(e.target.checked)} 
+                className="rounded"
+              />
+              Ton
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="p-4 columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-4 gap-6 [column-fill:_balance]">{/* masonry container */}
-        {grouped.map(([oid, arr]) => (
-          <div key={oid} className="rounded-lg border shadow-sm p-4 select-none break-inside-avoid mb-3 bg-gray-200">
-            <div className="text-sm text-gray-600 mb-2 flex items-center gap-3">
-              <span>Order {oid}</span>
-              {arr[0]?.pager_number && (
-                <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-xs">Pager {arr[0].pager_number}</span>
-              )}
-            </div>
-            <div className="flex flex-col gap-3">
-              {arr.filter((x) => filter==='ALL' || x.prep_status===filter).map((it) => (
-                <div key={it.id} className={`rounded-md p-3 border ${it.prep_status==='READY' ? 'border-green-500 ring-1 ring-green-300' : it.prep_status==='IN_PROGRESS' ? 'border-amber-400' : 'border-gray-200'}`}>
-                  <div className="font-semibold text-xl">{it.name} <span className="text-gray-500">x{it.qty}</span></div>
-                  <div className="mt-1">Status: <span className="font-medium">{it.prep_status}</span></div>
-                  <div className="mt-1 text-sm text-gray-700 space-y-1">
-                    {it.in_progress_at && (
-                      <div>Start: {new Date(it.in_progress_at).toLocaleTimeString()} {it.in_progress_by ? `(PIN ${it.in_progress_by})` : ''}</div>
-                    )}
-                    {it.ready_at && (
-                      <div>Ready: {new Date(it.ready_at).toLocaleTimeString()} {it.ready_by ? `(PIN ${it.ready_by})` : ''}</div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 mt-2">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" onClick={() => setStatus(it, 'IN_PROGRESS')}>Start</button>
-                    <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700" onClick={() => setStatus(it, 'READY')}>Ready</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="flex-1 p-4 overflow-y-auto hide-scrollbar">
+        {grouped.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Keine Küchenartikel vorhanden.</div>
           </div>
-        ))}
+        ) : (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {grouped.map(([oid, arr]) => (
+              <div key={oid} className="bg-card rounded-lg border shadow-sm p-4 select-none">
+                <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                  <span className="font-mono">Bestellung {oid}</span>
+                  {arr[0]?.pager_number && (
+                    <span className="px-2 py-1 rounded bg-amber-100 text-amber-800 text-xs font-medium">
+                      Pager {arr[0].pager_number}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="space-y-3">
+                  {arr.filter((x) => filter==='ALL' || x.prep_status===filter).map((it) => (
+                    <div key={it.id} className={`rounded-lg p-3 border ${
+                      it.prep_status==='READY' ? 'border-green-500 bg-green-50' : 
+                      it.prep_status==='IN_PROGRESS' ? 'border-amber-400 bg-amber-50' : 
+                      'border-border bg-muted/30'
+                    }`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-semibold text-base">{it.name}</div>
+                        <div className="text-sm font-medium bg-background px-2 py-1 rounded">x{it.qty}</div>
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground mb-3">
+                        Status: <span className="font-medium">
+                          {it.prep_status === 'QUEUED' ? 'Wartend' :
+                           it.prep_status === 'IN_PROGRESS' ? 'In Arbeit' :
+                           it.prep_status === 'READY' ? 'Fertig' :
+                           it.prep_status}
+                        </span>
+                      </div>
+                      
+                      {(it.in_progress_at || it.ready_at) && (
+                        <div className="text-xs text-muted-foreground space-y-1 mb-3">
+                          {it.in_progress_at && (
+                            <div>Start: {new Date(it.in_progress_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} 
+                              {it.in_progress_by_name && ` (${it.in_progress_by_name})`}
+                            </div>
+                          )}
+                          {it.ready_at && (
+                            <div>Fertig: {new Date(it.ready_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} 
+                              {it.ready_by_name && ` (${it.ready_by_name})`}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2">
+                        {it.prep_status !== 'IN_PROGRESS' && it.prep_status !== 'READY' && it.prep_status !== 'SERVED' && (
+                          <button 
+                            className="flex-1 touch-button bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm" 
+                            onClick={() => setStatus(it, 'IN_PROGRESS')}
+                          >
+                            Start
+                          </button>
+                        )}
+                        {it.prep_status === 'IN_PROGRESS' && (
+                          <button 
+                            className="flex-1 touch-button bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm" 
+                            onClick={() => setStatus(it, 'READY')}
+                          >
+                            Fertig
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ export async function getDB(): Promise<SQLiteDBConnection | null> {
     await ensureSchema(db);
     return db;
   } catch (e) {
-    console.warn('SQLite unavailable, using memory store', e);
+    // SQLite unavailable, falling back to memory store
     return null;
   }
 }
